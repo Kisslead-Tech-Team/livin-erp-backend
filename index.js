@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 1111;
 // Allow CORS from localhost:3000
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://erp-frontend-indol.vercel.app",
+  "https://livin-erp-frontend.onrender.com",
 ];
 
 app.use(
