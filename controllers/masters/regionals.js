@@ -1,82 +1,71 @@
 const db = require("../../config/db");
 const { validationResult } = require("express-validator");
 const { getCurrentDateTime } = require("../../utilities/functions");
+const { allDatas, totalCount } = require("../../models/masters/regionals");
 
 // get totals
 const getTotals = async (req, res, next) => {
-  let { search, all } = req.body;
+  try {
+    const { search, all } = req.body;
 
-  // default fallbacks
-  search = search ? `%${search}%` : "%%";
+    const results = await totalCount({
+      search,
+      all,
+    });
 
-  // dynamic condition
-  const statusCondition = all
-    ? "a.regional_status != 'Deleted'"
-    : "a.regional_status = 'Active'";
-
-  const sql = `SELECT
-                COUNT(*) AS total_count
-                FROM regionals AS a
-                WHERE ${statusCondition}
-                AND (a.regional_name LIKE ? OR a.regional_id LIKE ?)
-                ORDER BY a.regional_id ASC`;
-
-  db.query(sql, [search, search], (err, results) => {
-    if (err) {
-      return next(new Error(err.message));
+    if (!results.status) {
+      return next(new Error(results.message || "Internal server error"));
     }
 
-    if (!results.length) {
+    const datas = results.results;
+
+    if (!datas.length) {
       return next(new Error("No Data Available"));
     }
 
     res.json({
       status: true,
       message: "Datas retrieved successfully",
-      data: results[0].total_count,
+      data: datas[0].total_count,
     });
-  });
+  } catch (err) {
+    console.error(err);
+    return next(new Error(err.message || "Error fetching data"));
+  }
 };
 
-// get datas
 const getDatas = async (req, res, next) => {
-  let { limit, offset, search, all } = req.body;
+  try {
+    const { limit, offset, search, all, sortField, sortOrder } = req.body;
 
-  // default fallbacks
-  limit = parseInt(limit) || 10;
-  offset = parseInt(offset) || 0;
-  search = search ? `%${search}%` : "%%";
+    const results = await allDatas({
+      limit: parseInt(limit) || 10,
+      offset: parseInt(offset) || 0,
+      search,
+      all,
+      sortField,
+      sortOrder,
+    });
 
-  // dynamic condition
-  const statusCondition = all
-    ? "a.regional_status != 'Deleted'"
-    : "a.regional_status = 'Active'";
-
-  const sql = `SELECT
-                a.regional_id,
-                a.regional_name,
-                a.regional_status
-                FROM regionals AS a
-                WHERE ${statusCondition}
-                AND (a.regional_name LIKE ? OR a.regional_id LIKE ?)
-                ORDER BY a.regional_id ASC
-                LIMIT ? OFFSET ?`;
-
-  db.query(sql, [search, search, limit, offset], (err, results) => {
-    if (err) {
-      return next(new Error(err.message));
+    if (!results.status) {
+      return next(new Error(results.message || "Internal server error"));
     }
 
-    if (!results.length) {
+    const datas = results.results;
+
+    if (!datas.length) {
       return next(new Error("No Data Available"));
     }
 
     res.json({
       status: true,
       message: "Datas retrieved successfully",
-      data: results,
+      data: datas,
     });
-  });
+  } catch (err) {
+    console.error(err);
+    return next(new Error(err.message || "Error fetching data"));
+  }
 };
 
 // add data
@@ -89,7 +78,7 @@ const addData = async (req, res, next) => {
 
     const { regional_name, regional_status, working_user } = req.body;
 
-    // Check if superadmin already exists
+    // Check if data already exists
     const checkQuery =
       "SELECT regional_id FROM regionals WHERE regional_name = ? AND regional_status != 'Deleted'";
     db.query(checkQuery, [regional_name], async (err, results) => {
@@ -136,7 +125,11 @@ const editData = async (req, res, next) => {
     const { regional_id, regional_name, regional_status, working_user } =
       req.body;
 
-    // Check if superadmin already exists
+    if (!regional_id) {
+      return next(new Error("Please provide region id!"));
+    }
+
+    // Check if data already exists
     const checkQuery =
       "SELECT regional_id FROM regionals WHERE regional_name = ? AND regional_id != ? AND regional_status != 'Deleted'";
     db.query(checkQuery, [regional_name, regional_id], async (err, results) => {
@@ -182,7 +175,7 @@ const deleteData = async (req, res, next) => {
       return next(new Error(valErrors.array()[0].msg));
     }
 
-    // Check if superadmin already exists
+    // Check if data already exists
     const checkQuery =
       "SELECT regional_id FROM regionals WHERE regional_id = ? AND regional_status != 'Deleted'";
     db.query(checkQuery, [regional_id], async (err, results) => {

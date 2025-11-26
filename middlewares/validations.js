@@ -15,6 +15,26 @@ exports.loginValidation = [
   body("password").isLength({ min: 6 }).withMessage("Password too short"),
 ];
 
+// regional details
+exports.regionalValidation = [
+  body("regional_name").notEmpty().withMessage("Name is required"),
+  body("working_user")
+    .isInt()
+    .withMessage("User is required and must be an integer"),
+];
+
+// role details
+exports.roleValidation = [
+  body("role_name").notEmpty().withMessage("Name is required"),
+  body("role_department").notEmpty().withMessage("Department is required"),
+  body("role_report_to").isInt().withMessage("Report to is required"),
+  body("working_user")
+    .isInt()
+    .withMessage("User is required and must be an integer"),
+];
+
+// ----------------------------------------------------------
+
 // user details
 exports.userValidation = [
   body("user_name").notEmpty().withMessage("Name is required"),
@@ -32,14 +52,6 @@ exports.userValidation = [
   body("user_status")
     .isInt()
     .withMessage("Status is required and must be an integer"),
-  body("working_user")
-    .isInt()
-    .withMessage("User is required and must be an integer"),
-];
-
-// regional details
-exports.regionalValidation = [
-  body("regional_name").notEmpty().withMessage("Name is required"),
   body("working_user")
     .isInt()
     .withMessage("User is required and must be an integer"),

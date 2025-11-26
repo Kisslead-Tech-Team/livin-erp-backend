@@ -1,10 +1,8 @@
 require("dotenv").config();
 const express = require("express");
-const bodyParser = require("body-parser");
+const app = express();
 const cors = require("cors");
 const errorHandler = require("./middlewares/error");
-const { getCurrentDateTime } = require("./utilities/functions");
-const app = express();
 const PORT = process.env.PORT || 1111;
 
 // Allow CORS from localhost:3000
@@ -29,25 +27,9 @@ app.use(
   })
 );
 
-app.use(bodyParser.json());
-
-// check api
-app.get("/", (req, res) => {
-  res.send("Backend server is running at " + getCurrentDateTime());
-});
-
-// login routes
-const userRoutes = require("./routes/users");
-app.use("/user", userRoutes);
-
-// regional routes
-const regionalsRoutes = require("./routes/masters/regionals");
-app.use("/regionals", regionalsRoutes);
-
-// masters routes
-const mastersRoutes = require("./routes/masters");
-app.use("/masters", mastersRoutes);
-
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use("/", require("./app"));
 app.use(errorHandler);
 
 // Start server
